@@ -108,67 +108,77 @@ def premium_row(label, value, highlight=False):
 # ══════════════════════════════════════════════
 
 def kb_main():
-    """Main menu with colored buttons - Premium Edition"""
+    """Main menu with real button colors - Premium Edition"""
     logged  = state["logged_in"]
     running = state["running"]
     
     return InlineKeyboardMarkup(inline_keyboard=[
-        # Row 1: Primary Authentication
+        # Row 1: Primary Authentication (blue style)
         [
             InlineKeyboardButton(
                 text="✓ লগিন সম্পন্ন" if logged else "লগিন করুন",
-                callback_data="login"
+                callback_data="login",
+                style="primary"
             ),
         ],
-        # Row 2: Setup Controls
+        # Row 2: Setup Controls (primary style)
         [
             InlineKeyboardButton(
                 text="চ্যানেল সেটআপ", 
-                callback_data="ask_channel"
+                callback_data="ask_channel",
+                style="primary"
             ),
             InlineKeyboardButton(
                 text="লাইভ লিঙ্ক", 
-                callback_data="ask_live"
+                callback_data="ask_live",
+                style="primary"
             ),
         ],
-        # Row 3: Admin Toggle
+        # Row 3: Admin Toggle (primary style)
         [
             InlineKeyboardButton(
                 text="অ্যাডমিন মোড চালু", 
-                callback_data="admin_on"
+                callback_data="admin_on",
+                style="primary"
             ),
             InlineKeyboardButton(
                 text="অ্যাডমিন মোড বন্ধ", 
-                callback_data="admin_off"
+                callback_data="admin_off",
+                style="danger"
             ),
         ],
-        # Row 4: Bot Control
+        # Row 4: Bot Control (success/danger style)
         [
             InlineKeyboardButton(
                 text="START BOT" if not running else "চলমান...",
-                callback_data="run"
+                callback_data="run",
+                style="success" if not running else "primary"
             ),
             InlineKeyboardButton(
                 text="STOP BOT", 
-                callback_data="stop"
+                callback_data="stop",
+                style="danger"
             ),
         ],
-        # Row 5: Status & Info
+        # Row 5: Status & Info (primary style)
         [
             InlineKeyboardButton(
                 text="স্ট্যাটাস প্যানেল", 
-                callback_data="status"
+                callback_data="status",
+                style="primary"
             ),
             InlineKeyboardButton(
                 text="সাহায্য গাইড", 
-                callback_data="help"
+                callback_data="help",
+                style="primary"
             ),
         ],
-        # Row 6: Refresh
+        # Row 6: Refresh (primary style)
         [
             InlineKeyboardButton(
                 text="রিফ্রেশ করুন", 
-                callback_data="menu"
+                callback_data="refresh_menu",
+                style="primary"
             ),
         ],
     ])
@@ -178,7 +188,8 @@ def kb_back():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="← মেইন মেনু", 
-            callback_data="menu"
+            callback_data="menu",
+            style="primary"
         )]
     ])
 
@@ -188,17 +199,20 @@ def kb_refresh():
         [
             InlineKeyboardButton(
                 text="রিফ্রেশ", 
-                callback_data="status"
+                callback_data="status",
+                style="primary"
             ),
             InlineKeyboardButton(
                 text="ড্যাশবোর্ড", 
-                callback_data="menu"
+                callback_data="menu",
+                style="primary"
             ),
         ],
         [
             InlineKeyboardButton(
                 text="← মেইন মেনু", 
-                callback_data="menu"
+                callback_data="menu",
+                style="primary"
             )
         ],
     ])
@@ -207,14 +221,14 @@ def kb_quick_actions():
     """Quick action panel"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="কুইক স্টার্ট", callback_data="run"),
-            InlineKeyboardButton(text="জরুরি স্টপ", callback_data="stop"),
+            InlineKeyboardButton(text="কুইক স্টার্ট", callback_data="run", style="success"),
+            InlineKeyboardButton(text="জরুরি স্টপ", callback_data="stop", style="danger"),
         ],
         [
-            InlineKeyboardButton(text="স্ট্যাটাস চেক", callback_data="status"),
+            InlineKeyboardButton(text="স্ট্যাটাস চেক", callback_data="status", style="primary"),
         ],
         [
-            InlineKeyboardButton(text="← মেইন মেনু", callback_data="menu"),
+            InlineKeyboardButton(text="← মেইন মেনু", callback_data="menu", style="primary"),
         ],
     ])
 
@@ -690,6 +704,23 @@ async def cb_menu(callback: CallbackQuery):
         reply_markup=kb_main()
     )
     await callback.answer("মেইন মেনু")
+
+
+@dp.callback_query(F.data == "refresh_menu")
+async def cb_refresh_menu(callback: CallbackQuery):
+    """Refresh main menu"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        f"{card_header('মেইন কন্ট্রোল প্যানেল')}\n\n"
+        f"<b>বট নিয়ন্ত্রণ করতে নিচের বাটন ব্যবহার করুন</b>\n\n"
+        f"{status_badge(state['running'], 'বট চালু আছে', 'বট বন্ধ আছে')}\n"
+        f"{status_badge(state['logged_in'], 'লগিন করা আছে', 'লগিন করা নেই')}",
+        reply_markup=kb_main()
+    )
+    await callback.answer("রিফ্রেশ সম্পন্ন")
 
 
 @dp.callback_query(F.data == "status")
