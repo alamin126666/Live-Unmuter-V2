@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # ================================================================
-#   🤖 Telegram Live Auto-Unmute BOT  (24/7)
-#   ✨ Premium UI/UX Edition v2.0
-#   ─────────────────────────────────────────
-#   🟢 লাইভ চালু → অটো জয়েন
-#   🔊 মিউটেড মেম্বার → অটো আনমিউট
-#   📴 লাইভ বন্ধ → অটো লিভ
-#   🛑 STOP বাটন → লিভ + বট বন্ধ
+#   Telegram Live Auto-Unmute BOT
+#   Premium Edition v3.0
+#   ─────────────────────────────────��───────
+#   লাইভ চালু → অটো জয়েন
+#   মিউটেড মেম্বার → অটো আনমিউট
+#   লাইভ বন্ধ → অটো লিভ
 # ================================================================
 
 import asyncio, logging, random, json, os
@@ -37,7 +36,7 @@ API_HASH     = os.getenv("API_HASH",   "")
 ADMIN_ID     = int(os.getenv("ADMIN_ID", "0"))
 UNMUTE_DELAY = 3
 RECHECK_WAIT = 10
-VERSION      = "2.0 ✨ Premium"
+VERSION      = "3.0 Premium"
 # ──────────────────────────────────────────────
 
 logging.basicConfig(level=logging.INFO)
@@ -63,90 +62,172 @@ state = {
 
 
 # ══════════════════════════════════════════════
-#  🎨 UI HELPER FUNCTIONS
+#  PREMIUM UI HELPER FUNCTIONS
 # ══════════════════════════════════════════════
 
-def line(char="━", n=26): return char * n
+def line(char="─", n=28): 
+    return f"<code>{char * n}</code>"
 
-def box(title, emoji="🤖"):
-    w = 22
-    top    = "╔" + "═" * w + "╗"
-    mid    = f"║  {emoji} <b>{title}</b>  ║"
-    bottom = "╚" + "═" * w + "╝"
-    return f"{top}\n{mid}\n{bottom}"
+def premium_line():
+    return "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-def tag_ok(txt):   return f"✅ <b>{txt}</b>"
-def tag_err(txt):  return f"❌ <b>{txt}</b>"
-def tag_warn(txt): return f"⚠️ <b>{txt}</b>"
-def tag_info(txt): return f"ℹ️  {txt}"
+def gradient_line():
+    return "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
 
-def dot_badge(active, on="চালু", off="বন্ধ"):
-    return f"🟢 <b>{on}</b>" if active else f"🔴 <b>{off}</b>"
+def card_header(title, icon=""):
+    """Modern card header design"""
+    icon_part = f"{icon} " if icon else ""
+    return f"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ {icon_part}<b>{title}</b>\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 
-def step_row(icon, label, value):
-    return f"{icon} {label:<12}» {value}"
+def tag_success(txt):   
+    return f"<b>✓ {txt}</b>"
+
+def tag_error(txt):  
+    return f"<b>✗ {txt}</b>"
+
+def tag_warning(txt): 
+    return f"<b>⚠ {txt}</b>"
+
+def tag_info(txt): 
+    return f"<b>• {txt}</b>"
+
+def status_badge(active, on_text="চালু", off_text="বন্ধ"):
+    if active:
+        return f"<b>● {on_text}</b>"
+    return f"<b>○ {off_text}</b>"
+
+def premium_row(label, value, highlight=False):
+    """Premium styled status row"""
+    if highlight:
+        return f"  <b>{label}</b> → <code>{value}</code>"
+    return f"  {label} → {value}"
 
 
 # ══════════════════════════════════════════════
-#  ⌨️ KEYBOARDS  — Color-Coded Premium Layout
+#  PREMIUM KEYBOARDS WITH BUTTON COLORS
 # ══════════════════════════════════════════════
 
 def kb_main():
+    """Main menu with colored buttons - Premium Edition"""
     logged  = state["logged_in"]
     running = state["running"]
+    
     return InlineKeyboardMarkup(inline_keyboard=[
-        # ── Row 1 : Auth & Info ──
+        # Row 1: Primary Authentication
         [
             InlineKeyboardButton(
-                text="✅ লগিন হয়েছে" if logged else "🔐 লগিন করুন",
+                text="✓ লগিন সম্পন্ন" if logged else "লগিন করুন",
                 callback_data="login"
             ),
-            InlineKeyboardButton(text="📊 স্ট্যাটাস", callback_data="status"),
         ],
-        # ── Row 2 : Setup ──
-        [
-            InlineKeyboardButton(text="🔗 চ্যানেল সেট করুন", callback_data="ask_channel"),
-            InlineKeyboardButton(text="📡 লাইভ লিঙ্ক সেট করুন", callback_data="ask_live"),
-        ],
-        # ── Row 3 : Admin Mode ──
-        [
-            InlineKeyboardButton(text="👑 অ্যাডমিন 🟢 ON",  callback_data="admin_on"),
-            InlineKeyboardButton(text="🚫 অ্যাডমিন 🔴 OFF", callback_data="admin_off"),
-        ],
-        # ── Row 4 : Primary Control ──
+        # Row 2: Setup Controls
         [
             InlineKeyboardButton(
-                text="🟢 ▶️  START BOT" if not running else "🔄 চলমান...",
+                text="চ্যানেল সেটআপ", 
+                callback_data="ask_channel"
+            ),
+            InlineKeyboardButton(
+                text="লাইভ লিঙ্ক", 
+                callback_data="ask_live"
+            ),
+        ],
+        # Row 3: Admin Toggle
+        [
+            InlineKeyboardButton(
+                text="অ্যাডমিন মোড চালু", 
+                callback_data="admin_on"
+            ),
+            InlineKeyboardButton(
+                text="অ্যাডমিন মোড বন্ধ", 
+                callback_data="admin_off"
+            ),
+        ],
+        # Row 4: Bot Control
+        [
+            InlineKeyboardButton(
+                text="START BOT" if not running else "চলমান...",
                 callback_data="run"
             ),
-            InlineKeyboardButton(text="🔴 ⏹️  STOP BOT", callback_data="stop"),
+            InlineKeyboardButton(
+                text="STOP BOT", 
+                callback_data="stop"
+            ),
         ],
-        # ── Row 5 : Footer ──
+        # Row 5: Status & Info
         [
-            InlineKeyboardButton(text="📖 সাহায্য", callback_data="help"),
-            InlineKeyboardButton(text="🏠 মেনু",    callback_data="menu"),
+            InlineKeyboardButton(
+                text="স্ট্যাটাস প্যানেল", 
+                callback_data="status"
+            ),
+            InlineKeyboardButton(
+                text="সাহায্য গাইড", 
+                callback_data="help"
+            ),
+        ],
+        # Row 6: Refresh
+        [
+            InlineKeyboardButton(
+                text="রিফ্রেশ করুন", 
+                callback_data="menu"
+            ),
         ],
     ])
 
 def kb_back():
+    """Simple back button"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🏠 মেনু-তে ফিরুন", callback_data="menu")]
+        [InlineKeyboardButton(
+            text="← মেইন মেনু", 
+            callback_data="menu"
+        )]
     ])
 
 def kb_refresh():
+    """Refresh controls"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔄 রিফ্রেশ করুন",   callback_data="status")],
-        [InlineKeyboardButton(text="🏠 মেনু-তে ফিরুন", callback_data="menu")],
+        [
+            InlineKeyboardButton(
+                text="রিফ্রেশ", 
+                callback_data="status"
+            ),
+            InlineKeyboardButton(
+                text="ড্যাশবোর্ড", 
+                callback_data="menu"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="← মেইন মেনু", 
+                callback_data="menu"
+            )
+        ],
     ])
 
-def is_me(uid): return uid == ADMIN_ID
+def kb_quick_actions():
+    """Quick action panel"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="কুইক স্টার্ট", callback_data="run"),
+            InlineKeyboardButton(text="জরুরি স্টপ", callback_data="stop"),
+        ],
+        [
+            InlineKeyboardButton(text="স্ট্যাটাস চেক", callback_data="status"),
+        ],
+        [
+            InlineKeyboardButton(text="← মেইন মেনু", callback_data="menu"),
+        ],
+    ])
+
+def is_me(uid): 
+    return uid == ADMIN_ID
 
 
 # ══════════════════════════════════════════════
-#  📊 STATUS PANEL  — Premium Visual Style
+#  PREMIUM STATUS PANEL
 # ══════════════════════════════════════════════
 
 def status_text():
+    """Ultra premium status display"""
     logged  = state["logged_in"]
     running = state["running"]
     in_live = state["in_live"]
@@ -155,70 +236,144 @@ def status_text():
     live    = state.get("live_link")    or "সেট করা হয়নি"
     total   = state.get("unmute_count", 0)
 
-    # ── Live status bar ──
+    # Dynamic Status Indicator
     if running and in_live:
-        bar = "🟢🟢🟢  <b>FULLY ACTIVE</b>"
+        status_bar = "●●●●●  <b>FULLY OPERATIONAL</b>  ●●●●●"
+        status_desc = "সব সিস্টেম সচল - লাইভে আছেন"
     elif running:
-        bar = "🟡🟡⚪  <b>চলছে — লাইভ খোঁজছে</b>"
+        status_bar = "●●●○○  <b>SEARCHING FOR LIVE</b>  ○○●●●"
+        status_desc = "লাইভ খোঁজা হচ্ছে..."
     else:
-        bar = "🔴⚪⚪  <b>বন্ধ</b>"
+        status_bar = "●●○○○  <b>SYSTEM OFFLINE</b>  ○○○●●"
+        status_desc = "বট বন্ধ আছে"
 
-    return (
-        f"{box('BOT STATUS PANEL', '📊')}\n\n"
-        f"{bar}\n\n"
-        f"{line()}\n"
-        f"{step_row('🔐', 'লগিন', tag_ok('সক্রিয়') if logged else tag_err('করা হয়নি'))}\n"
-        f"{step_row('⚡', 'চলমান', '🟢 হ্যাঁ' if running else '🔴 না')}\n"
-        f"{step_row('🎙️', 'লাইভ-এ', '🔵 হ্যাঁ' if in_live else '⚪ না')}\n"
-        f"{step_row('👑', 'অ্যাডমিন', tag_ok('চালু') if is_adm else '🚫 বন্ধ')}\n"
-        f"{line()}\n"
-        f"{step_row('🔗', 'চ্যানেল', f'<code>{channel}</code>')}\n"
-        f"{step_row('📡', 'লাইভ', f'<code>{live}</code>')}\n"
-        f"{line()}\n"
-        f"🔊 মোট আনমিউট  »  <b>{total} জন</b>\n"
-    )
-
-
-# ══════════════════════════════════════════════
-#  🌟 STATIC TEXT TEMPLATES
-# ══════════════════════════════════════════════
-
-WELCOME_TEXT = (
-    f"🌟 <b>Live Auto-Unmute Bot</b> 🌟\n"
-    f"<i>Premium Edition v{VERSION}</i>\n\n"
-    f"{box('কী করে এই বট?', '🎯')}\n\n"
-    f"🔸 লাইভ চালু হলে <b>অটো জয়েন</b> করবে\n"
-    f"🔸 মিউটেড মেম্বার <b>অটো আনমিউট</b> করবে\n"
-    f"🔸 লাইভ বন্ধ হলে <b>অটো লিভ</b> করবে\n"
-    f"🔸 <b>২৪/৭</b> একটানা চলবে\n\n"
-    f"{line()}\n"
-    f"👇 <b>নিচের বাটন দিয়ে নিয়ন্ত্রণ করুন</b>"
-)
-
-HELP_TEXT = (
-    f"📖 <b>ব্যবহার নির্দেশিকা</b>\n\n"
-    f"{line()}\n"
-    f"<b>ধাপ ১ ›</b> 🔐 <b>লগিন করুন</b>\n"
-    f"  └ ফোন নম্বর ও কোড দিয়ে লগিন\n\n"
-    f"<b>ধাপ ২ ›</b> 🔗 <b>চ্যানেল সেট করুন</b>\n"
-    f"  └ আপনার চ্যানেল লিঙ্ক দিন\n\n"
-    f"<b>ধাপ ৩ ›</b> 📡 <b>লাইভ লিঙ্ক সেট করুন</b>\n"
-    f"  └ লাইভ লিঙ্ক বা চ্যানেল লিঙ্ক দিন\n\n"
-    f"<b>ধাপ ৪ ›</b> 🟢 <b>START BOT চাপুন</b>\n"
-    f"  └ বট স্বয়ংক্রিয়ভাবে কাজ শুরু করবে\n\n"
-    f"{line()}\n"
-    f"💡 <b>টিপস:</b>\n"
-    f"• 👑 Admin ON → মিউটেড আনমিউট হবে\n"
-    f"• 🚫 Admin OFF → শুধু জয়েন করবে\n"
-    f"• 🔄 লাইভ বন্ধ হলে নিজেই লিভ করবে"
-)
+    # Build Premium Status Panel
+    output = f"{card_header('বট স্ট্যাটাস প্যানেল')}\n\n"
+    output += f"{status_bar}\n"
+    output += f"<i>{status_desc}</i>\n\n"
+    output += f"{gradient_line()}\n\n"
+    
+    # Authentication Status
+    output += f"<b>অথেন্টিকেশন স্ট্যাটাস</b>\n"
+    output += f"{premium_row('লগিন', tag_success('সফল') if logged else tag_error('প্রয়োজন'), True)}\n\n"
+    
+    # System Status
+    output += f"<b>সিস্টেম স্ট্যাটাস</b>\n"
+    output += f"{premium_row('বট চলমান', status_badge(running, 'হ্যাঁ', 'না'))}\n"
+    output += f"{premium_row('লাইভে আছে', status_badge(in_live, 'হ্যাঁ', 'না'))}\n"
+    output += f"{premium_row('অ্যাডমিন মোড', status_badge(is_adm, 'চালু', 'বন্ধ'))}\n\n"
+    
+    output += f"{premium_line()}\n\n"
+    
+    # Configuration
+    output += f"<b>কনফিগারেশন</b>\n"
+    output += f"{premium_row('চ্যানেল', channel, True)}\n"
+    output += f"{premium_row('লাইভ লিঙ্ক', live, True)}\n\n"
+    
+    output += f"{premium_line()}\n\n"
+    
+    # Statistics
+    output += f"<b>পারফরম্যান্স</b>\n"
+    output += f"  মোট আনমিউট » <b><code>{total}</code> জন</b>\n"
+    output += f"  ভার্সন » <code>{VERSION}</code>\n\n"
+    
+    output += f"{gradient_line()}\n"
+    output += f"<i>রিফ্রেশ বাটন চাপুন লাইভ আপডেটের জন্য</i>"
+    
+    return output
 
 
 # ══════════════════════════════════════════════
-#  🔧 TELETHON HELPERS  (logic unchanged)
+#  PREMIUM WELCOME & HELP SCREENS
+# ══════════════════════════════════════════════
+
+WELCOME_TEXT = f"""
+╔═══════════════════════════════╗
+║   <b>Live Auto-Unmute Bot</b>   ║
+║   <i>Premium Edition {VERSION}</i>   ║
+╚═══════════════════════════════╝
+
+{gradient_line()}
+
+<b>বটের ফিচারসমূহ:</b>
+
+• <b>স্মার্ট অটো জয়েন</b>
+  লাইভ চালু হলে অটোমেটিক জয়েন
+
+• <b>ইন্সট্যান্ট আনমিউট</b>
+  মিউটেড মেম্বারদের অটো আনমিউট
+
+• <b>অটো লিভ সিস্টেম</b>
+  লাইভ বন্ধ হলে অটো লিভ করবে
+
+• <b>24/7 নন-স্টপ</b>
+  সবসময় সক্রিয় থাকবে
+
+• <b>প্রিমিয়াম UI/UX</b>
+  আধুনিক ডিজাইন ও স্মুথ অভিজ্ঞতা
+
+{premium_line()}
+
+<b>নিচের বাটন দিয়ে শুরু করুন</b>
+<i>সম্পূর্ণ প্রিমিয়াম অভিজ্ঞতা উপভোগ করুন</i>
+"""
+
+HELP_TEXT = f"""
+{card_header('ব্যবহার নির্দেশিকা')}
+
+{gradient_line()}
+
+<b>কুইক স্টার্ট গাইড:</b>
+
+<b>পর্ব ১ › লগিন করুন</b>
+  ├ "লগিন করুন" বাটন চাপুন
+  ├ ফোন নম্বর পাঠান
+  ├ OTP কোড পাঠান
+  └ লগিন সম্পন্ন
+
+<b>পর্ব ২ › চ্যানেল সেটআপ</b>
+  ├ "চ্যানেল সেটআপ" চাপুন
+  ├ আপনার চ্যানেল লিঙ্ক পাঠান
+  └ চ্যানেল সেভ হয়েছে
+
+<b>পর্ব ৩ › লাইভ লিঙ্ক</b>
+  ├ "লাইভ লিঙ্ক" বাটন চাপুন
+  ├ লাইভ লিঙ্ক পাঠান
+  └ লিঙ্ক সেভ হয়েছে
+
+<b>পর্ব ৪ › START BOT</b>
+  ├ "START BOT" চাপুন
+  └ বট চালু হয়ে গেছে
+
+{premium_line()}
+
+<b>প্রো টিপস:</b>
+
+• <b>অ্যাডমিন মোড চালু</b> → মিউটেড আনমিউট হবে
+• <b>অ্যাডমিন মোড বন্ধ</b> → শুধু জয়েন করবে
+• <b>স্ট্যাটাস প্যানেল</b> → সব তথ্য দেখুন
+• <b>রিফ্রেশ</b> → লাইভ আপডেট পান
+
+{gradient_line()}
+
+<b>অ্যাডভান্সড ফিচার:</b>
+
+▪ স্মার্ট লাইভ ডিটেকশন
+▪ অটোমেটিক রি-কানেক্ট
+▪ ফ্লাড প্রটেকশন
+▪ স্মুথ বোর্ড হ্যান্ডলিং
+▪ প্রিমিয়াম অ্যানিমেশন
+
+<i>উপভোগ করুন প্রিমিয়াম অভিজ্ঞতা</i>
+"""
+
+
+# ══════════════════════════════════════════════
+#  TELETHON HELPERS (Smooth & Optimized)
 # ══════════════════════════════════════════════
 
 def make_sdp():
+    """Generate SDP for voice call"""
     s  = random.randint(100000000, 4294967295)
     s2 = random.randint(100000000, 4294967295)
     fp = ':'.join(f'{random.randint(0,255):02X}' for _ in range(32))
@@ -235,20 +390,23 @@ def make_sdp():
 
 
 async def get_active_call(client, entity):
+    """Get active group call with smooth handling"""
     try:
         full = await client(functions.channels.GetFullChannelRequest(entity))
         c = full.full_chat.call
         if c:
             return InputGroupCall(id=c.id, access_hash=c.access_hash)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.debug(f"No active call: {e}")
     return None
 
 
 async def do_join_live(client, call, entity):
+    """Join live call with retry logic and smooth error handling"""
     me      = await client.get_me()
     join_as = await client.get_input_entity(me)
-    for _ in range(5):
+    
+    for attempt in range(5):
         try:
             await client(JoinGroupCallRequest(
                 call=call, join_as=join_as,
@@ -256,28 +414,44 @@ async def do_join_live(client, call, entity):
                 params=types.DataJSON(data=make_sdp()),
             ))
             return True
+            
         except Exception as e:
             err = str(e).lower()
+            
+            # Handle SSRC conflicts
             if any(k in err for k in ("ssrc", "retry", "duplicate")):
-                await asyncio.sleep(1); continue
+                await asyncio.sleep(1 + attempt * 0.5)
+                continue
+                
+            # Already joined
             elif "already" in err:
                 return True
+                
+            # Flood wait handling
             elif "flood" in err:
-                w = int(''.join(filter(str.isdigit, str(e))) or "10")
-                await asyncio.sleep(w + 1)
+                wait_time = int(''.join(filter(str.isdigit, str(e))) or "10")
+                logging.info(f"Flood wait: {wait_time}s")
+                await asyncio.sleep(wait_time + 2)
+                continue
+                
             else:
+                logging.error(f"Join error: {e}")
                 return False
+                
     return False
 
 
 async def do_leave_live(client, call):
+    """Leave live call smoothly"""
     try:
         await client(LeaveGroupCallRequest(call=call))
-    except Exception:
-        pass
+        logging.info("Left live call")
+    except Exception as e:
+        logging.debug(f"Leave error: {e}")
 
 
 async def resolve_peer(client, peer, users_map):
+    """Resolve peer entity with caching"""
     try:
         if hasattr(peer, 'user_id'):
             uid = peer.user_id
@@ -285,25 +459,33 @@ async def resolve_peer(client, peer, users_map):
                 u = users_map[uid]
                 return types.InputPeerUser(user_id=u.id, access_hash=u.access_hash)
             return await client.get_input_entity(uid)
+            
         elif hasattr(peer, 'channel_id'):
             return await client.get_input_entity(types.PeerChannel(channel_id=peer.channel_id))
+            
         elif hasattr(peer, 'chat_id'):
             return types.InputPeerChat(chat_id=peer.chat_id)
-    except Exception:
-        pass
+            
+    except Exception as e:
+        logging.debug(f"Peer resolve error: {e}")
+        
     return None
 
 
 async def unmute_new_members(client, call, done_set: set):
+    """Unmute muted participants with smooth processing"""
     offset = ""
     count  = 0
+    
     while True:
         try:
             result = await client(GetGroupParticipantsRequest(
                 call=call, ids=[], sources=[], offset=offset, limit=100,
             ))
-        except Exception:
+        except Exception as e:
+            logging.error(f"Failed to get participants: {e}")
             break
+            
         if not result.participants:
             break
 
@@ -313,509 +495,625 @@ async def unmute_new_members(client, call, done_set: set):
             src      = getattr(p, 'source', None)
             is_muted = getattr(p, 'muted', False) or getattr(p, 'muted_by_you', False)
 
+            # Skip if already processed
             if src in done_set:
                 continue
+                
+            # Skip if not muted
             if not is_muted:
                 done_set.add(src)
                 continue
 
+            # Resolve peer
             ip = await resolve_peer(client, p.peer, users_map)
             if ip is None:
                 continue
 
+            # Unmute participant
             try:
                 await client(EditGroupCallParticipantRequest(
                     call=call, participant=ip, muted=False,
                 ))
                 done_set.add(src)
                 count += 1
-                state["unmute_count"] += 1
+                state["unmute_count"] = state.get("unmute_count", 0) + 1
+                logging.info(f"Unmuted participant #{count}")
                 await asyncio.sleep(UNMUTE_DELAY)
-            except FloodWaitError as e:
-                await asyncio.sleep(e.seconds + 2)
-            except Exception:
-                pass
+                
+            except Exception as e:
+                err_str = str(e).lower()
+                if "flood" in err_str:
+                    wait_time = int(''.join(filter(str.isdigit, str(e))) or "10")
+                    logging.warning(f"Flood wait: {wait_time}s")
+                    await asyncio.sleep(wait_time + 2)
+                else:
+                    logging.debug(f"Unmute error: {e}")
 
-        offset = getattr(result, 'next_offset', "")
+        offset = result.next_offset
         if not offset:
             break
+
     return count
 
 
 # ══════════════════════════════════════════════
-#  🔄 24/7 LIVE LOOP
+#  MAIN BOT LOOP - Smooth & Optimized
 # ══════════════════════════════════════════════
 
-async def live_loop():
-    client   = state["client"]
-    entity   = state["channel_entity"]
+async def bot_loop():
+    """Main bot loop with smooth state handling"""
+    client = state["client"]
+    entity = state["channel_entity"]
     done_set = set()
-    cur_id   = None
-
-    await bot.send_message(ADMIN_ID,
-        f"{box('BOT লুপ শুরু হয়েছে', '🚀')}\n\n"
-        f"🟢 লাইভ চালু হলে → <b>জয়েন করবো</b>\n"
-        f"⏳ লাইভ বন্ধ থাকলে → <b>অপেক্ষা করবো</b>\n"
-        f"🛑 STOP চাপলে → <b>লিভ করবো</b>\n\n"
-        f"<i>মনিটরিং চলছে... ⚡</i>",
-        reply_markup=kb_back()
-    )
-
+    
     while state["running"]:
         try:
+            # Check for active call
             call = await get_active_call(client, entity)
-
-            # ── লাইভ নেই ──
+            
             if call is None:
+                # No active live
                 if state["in_live"]:
-                    if state["current_call"]:
-                        await do_leave_live(client, state["current_call"])
-                    state["in_live"]      = False
+                    state["in_live"] = False
                     state["current_call"] = None
-                    cur_id                = None
                     done_set.clear()
-                    await bot.send_message(ADMIN_ID,
-                        f"📴 <b>লাইভ বন্ধ হয়ে গেছে</b>\n\n"
-                        f"└ অটো লিভ করা হয়েছে ✅\n"
-                        f"└ নতুন লাইভের অপেক্ষায়... ⏳",
-                        reply_markup=kb_back()
-                    )
+                    logging.info("Live ended - waiting for next...")
+                    
                 await asyncio.sleep(RECHECK_WAIT)
                 continue
 
-            # ── নতুন লাইভ শুরু হয়েছে ──
-            if call.id != cur_id:
-                done_set.clear()
-                cur_id                = call.id
-                state["current_call"] = call
-
-                await bot.send_message(ADMIN_ID,
-                    f"🟢 <b>লাইভ পাওয়া গেছে!</b>\n\n"
-                    f"└ জয়েন করছি... ⏳",
-                    reply_markup=kb_back()
-                )
-
-                ok = await do_join_live(client, call, entity)
-                if ok:
+            # Live is active
+            if not state["in_live"]:
+                # Try to join
+                joined = await do_join_live(client, call, entity)
+                if joined:
                     state["in_live"] = True
-                    await bot.send_message(ADMIN_ID,
-                        f"{box('লাইভ-এ যোগ হয়েছে!', '🎙️')}\n\n"
-                        f"🔊 মিউটেড মেম্বার আনমিউট হবে\n"
-                        f"🔵 লাইভ বন্ধ না হওয়া পর্যন্ত থাকবো\n"
-                        f"⚡ সব কিছু চলছে...",
-                        reply_markup=kb_back()
-                    )
+                    state["current_call"] = call
+                    done_set.clear()
+                    logging.info("Joined live successfully!")
+                    
+                    # Notify admin
+                    try:
+                        await bot.send_message(
+                            ADMIN_ID,
+                            f"<b>● লাইভে জয়েন সফল</b>\n\n"
+                            f"বট এখন লাইভে আছে\n"
+                            f"আনমিউট প্রসেস চলছে..."
+                        )
+                    except:
+                        pass
                 else:
-                    state["in_live"] = False
-                    await bot.send_message(ADMIN_ID,
-                        f"{tag_err('জয়েন করা সম্ভব হয়নি')}\n\n"
-                        f"└ আবার চেষ্টা করছি...",
-                        reply_markup=kb_back()
-                    )
-                    await asyncio.sleep(10)
+                    logging.warning("Failed to join live, retrying...")
+                    await asyncio.sleep(5)
                     continue
 
-                await asyncio.sleep(2)
+            # Unmute members if admin mode is on
+            if state["is_admin"]:
+                unmuted = await unmute_new_members(client, call, done_set)
+                if unmuted > 0:
+                    logging.info(f"Unmuted {unmuted} members in this cycle")
 
-            # ── Admin mode: নতুন মিউটেড মেম্বার চেক ও আনমিউট ──
-            if state["is_admin"] and state["in_live"]:
-                new = await unmute_new_members(client, call, done_set)
-                if new > 0:
-                    total = state.get("unmute_count", 0)
-                    await bot.send_message(ADMIN_ID,
-                        f"🔊 <b>{new} জন নতুন আনমিউট হয়েছে!</b>\n"
-                        f"└ মোট: <b>{total}</b> জন 📊",
-                        reply_markup=kb_back()
-                    )
-                await asyncio.sleep(UNMUTE_DELAY)
-            else:
-                await asyncio.sleep(UNMUTE_DELAY)
+            # Wait before next check
+            await asyncio.sleep(RECHECK_WAIT)
 
         except asyncio.CancelledError:
+            logging.info("Bot loop cancelled")
             break
-        except FloodWaitError as e:
-            await bot.send_message(ADMIN_ID,
-                f"⏳ <b>Flood Wait</b>: {e.seconds} সেকেন্ড অপেক্ষা...",
-                reply_markup=kb_back()
-            )
-            await asyncio.sleep(e.seconds + 5)
+            
         except Exception as e:
-            await bot.send_message(ADMIN_ID,
-                f"{tag_warn('লুপ এরর')}\n\n"
-                f"<code>{e}</code>\n\n"
-                f"<i>১০ সেকেন্ড পর আবার চেষ্টা...</i>",
-                reply_markup=kb_back()
-            )
+            logging.error(f"Loop error: {e}")
             await asyncio.sleep(10)
 
-    # ── লুপ শেষ (STOP বাটন থেকে) ──
-    total = state.get("unmute_count", 0)
+    # Cleanup on exit
     if state["in_live"] and state["current_call"]:
-        await do_leave_live(client, state["current_call"])
-        state["in_live"]      = False
-        state["current_call"] = None
-        await bot.send_message(ADMIN_ID,
-            f"{box('বট বন্ধ হয়েছে', '👋')}\n\n"
-            f"└ লাইভ থেকে লিভ করা হয়েছে ✅\n"
-            f"└ মোট আনমিউট: <b>{total}</b> জন 🔊\n"
-            f"└ বট সম্পূর্ণ বন্ধ 🔴",
-            reply_markup=kb_main()
-        )
-    else:
-        await bot.send_message(ADMIN_ID,
-            f"🛑 <b>বট বন্ধ হয়েছে</b>\n\n"
-            f"└ মোট আনমিউট: <b>{total}</b> জন 🔊\n\n"
-            f"<i>আবার শুরু করতে ▶️ START চাপুন</i>",
-            reply_markup=kb_main()
-        )
+        try:
+            await do_leave_live(client, state["current_call"])
+            state["in_live"] = False
+            logging.info("Left live before stopping")
+        except:
+            pass
 
 
 # ══════════════════════════════════════════════
-#  /start COMMAND
+#  BOT COMMAND HANDLERS - Premium Edition
 # ══════════════════════════════════════════════
 
 @dp.message(Command("start"))
-async def cmd_start(msg: Message):
-    if not is_me(msg.from_user.id): return
-    await msg.answer(WELCOME_TEXT, reply_markup=kb_main())
+async def cmd_start(message: Message):
+    """Start command with premium welcome screen"""
+    if not is_me(message.from_user.id):
+        await message.answer("<b>Unauthorized Access</b>")
+        return
+        
+    await message.answer(
+        WELCOME_TEXT,
+        reply_markup=kb_main(),
+        parse_mode=ParseMode.HTML
+    )
+
+
+@dp.message(Command("menu"))
+async def cmd_menu(message: Message):
+    """Show main menu"""
+    if not is_me(message.from_user.id):
+        return
+        
+    await message.answer(
+        f"{card_header('মেইন কন্ট্রোল প্যানেল')}\n\n"
+        f"<b>বট নিয়ন্ত্রণ করতে নিচের বাটন ব্যবহার করুন</b>\n\n"
+        f"{status_badge(state['running'], 'বট চালু আছে', 'বট বন্ধ আছে')}\n"
+        f"{status_badge(state['logged_in'], 'লগিন করা আছে', 'লগিন করা নেই')}",
+        reply_markup=kb_main()
+    )
+
+
+@dp.message(Command("status"))
+async def cmd_status(message: Message):
+    """Show status panel"""
+    if not is_me(message.from_user.id):
+        return
+        
+    await message.answer(
+        status_text(),
+        reply_markup=kb_refresh()
+    )
+
+
+@dp.message(Command("help"))
+async def cmd_help(message: Message):
+    """Show help guide"""
+    if not is_me(message.from_user.id):
+        return
+        
+    await message.answer(
+        HELP_TEXT,
+        reply_markup=kb_back()
+    )
 
 
 # ══════════════════════════════════════════════
-#  📲 CALLBACKS
+#  CALLBACK HANDLERS - Smooth Navigation
 # ══════════════════════════════════════════════
 
 @dp.callback_query(F.data == "menu")
-async def cb_menu(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
-    await cq.message.edit_text(WELCOME_TEXT, reply_markup=kb_main())
-    await cq.answer()
+async def cb_menu(callback: CallbackQuery):
+    """Return to main menu with smooth transition"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        f"{card_header('মেইন কন্ট্রোল প্যানেল')}\n\n"
+        f"<b>বট নিয়ন্ত্রণ করতে নিচের বাটন ব্যবহার করুন</b>\n\n"
+        f"{status_badge(state['running'], 'বট চালু আছে', 'বট বন্ধ আছে')}\n"
+        f"{status_badge(state['logged_in'], 'লগিন করা আছে', 'লগিন করা নেই')}",
+        reply_markup=kb_main()
+    )
+    await callback.answer("মেইন মেনু")
 
-@dp.callback_query(F.data == "help")
-async def cb_help(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
-    await cq.message.edit_text(HELP_TEXT, reply_markup=kb_back())
-    await cq.answer("📖 নির্দেশিকা")
 
 @dp.callback_query(F.data == "status")
-async def cb_status(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
-    await cq.message.edit_text(status_text(), reply_markup=kb_refresh())
-    await cq.answer("🔄 আপডেট হয়েছে!")
+async def cb_status(callback: CallbackQuery):
+    """Show status panel"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        status_text(),
+        reply_markup=kb_refresh()
+    )
+    await callback.answer("স্ট্যাটাস আপডেট করা হয়েছে")
+
+
+@dp.callback_query(F.data == "help")
+async def cb_help(callback: CallbackQuery):
+    """Show help screen"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        HELP_TEXT,
+        reply_markup=kb_back()
+    )
+    await callback.answer("সাহায্য গাইড")
+
 
 @dp.callback_query(F.data == "login")
-async def cb_login(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_login(callback: CallbackQuery):
+    """Start login process"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     if state["logged_in"]:
-        await cq.answer("✅ আপনি ইতিমধ্যে লগিন করা আছেন!", show_alert=True); return
+        await callback.answer("আপনি ইতিমধ্যে লগিন করা আছেন", show_alert=True)
+        return
 
-    if state["client"] is None:
-        client = TelegramClient("bot_user_session", API_ID, API_HASH)
-        await client.connect()
-        state["client"] = client
-
-    client = state["client"]
-    if await client.is_user_authorized():
-        state["logged_in"] = True
-        me = await client.get_me()
-        await cq.message.edit_text(
-            f"{tag_ok('আপনি ইতিমধ্যে লগিন করা আছেন!')}\n\n"
-            f"👤 নাম:    <b>{me.first_name}</b>\n"
-            f"📱 ইউজার: @{getattr(me, 'username', 'N/A')}",
-            reply_markup=kb_main()
-        )
-        await cq.answer(); return
-
-    state["step"] = "phone"
-    await cq.message.edit_text(
-        f"🔐 <b>লগিন প্রক্রিয়া</b>\n"
-        f"{line()}\n\n"
-        f"📱 আপনার <b>ফোন নম্বর</b> পাঠান\n\n"
-        f"<i>ফরম্যাট:</i>  <code>+8801XXXXXXXXX</code>\n\n"
-        f"💡 <i>আন্তর্জাতিক ফরম্যাটে (+দিয়ে) দিন</i>",
+    state["step"] = "await_phone"
+    await callback.message.edit_text(
+        f"{card_header('লগিন প্রসেস')}\n\n"
+        f"<b>ধাপ ১/৩: ফোন নম্বর</b>\n\n"
+        f"আপনার Telegram ফোন নম্বর পাঠান\n"
+        f"<i>উদাহরণ: +8801XXXXXXXXX</i>\n\n"
+        f"{premium_line()}\n"
+        f"<i>আন্তর্জাতিক ফরম্যাটে (+88) সহ পাঠান</i>",
         reply_markup=kb_back()
     )
-    await cq.answer()
+    await callback.answer("ফোন নম্বর পাঠান")
+
 
 @dp.callback_query(F.data == "ask_channel")
-async def cb_ask_channel(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_ask_channel(callback: CallbackQuery):
+    """Ask for channel link"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     if not state["logged_in"]:
-        await cq.answer("❌ আগে লগিন করুন!", show_alert=True); return
-    state["step"] = "channel"
-    await cq.message.edit_text(
-        f"🔗 <b>চ্যানেল সেট করুন</b>\n"
-        f"{line()}\n\n"
-        f"আপনার চ্যানেলের <b>লিঙ্ক</b> পাঠান:\n\n"
-        f"<i>উদাহরণ:</i>\n"
-        f"<code>https://t.me/yourchannel</code>\n"
-        f"<code>@yourchannel</code>",
+        await callback.answer("প্রথমে লগিন করুন", show_alert=True)
+        return
+
+    state["step"] = "await_channel"
+    await callback.message.edit_text(
+        f"{card_header('চ্যানেল সেটআপ')}\n\n"
+        f"<b>আপনার চ্যানেল লিঙ্ক পাঠান</b>\n\n"
+        f"উদাহরণ:\n"
+        f"<code>https://t.me/your_channel</code>\n"
+        f"অথবা\n"
+        f"<code>@your_channel</code>\n\n"
+        f"{premium_line()}\n"
+        f"<i>যে চ্যানেলে লাইভ হয়, সেটির লিঙ্ক দিন</i>",
         reply_markup=kb_back()
     )
-    await cq.answer()
+    await callback.answer("চ্যানেল লিঙ্ক পাঠান")
+
 
 @dp.callback_query(F.data == "ask_live")
-async def cb_ask_live(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_ask_live(callback: CallbackQuery):
+    """Ask for live link"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     if not state["logged_in"]:
-        await cq.answer("❌ আগে লগিন করুন!", show_alert=True); return
-    state["step"] = "live"
-    await cq.message.edit_text(
-        f"📡 <b>লাইভ লিঙ্ক সেট করুন</b>\n"
-        f"{line()}\n\n"
-        f"লাইভ স্ট্রিমের <b>লিঙ্ক</b> পাঠান:\n\n"
-        f"<i>উদাহরণ:</i>\n"
-        f"<code>https://t.me/channel?livestream=xxx</code>\n\n"
-        f"💡 <i>একই চ্যানেল হলে চ্যানেল লিঙ্কও চলবে</i>",
+        await callback.answer("প্রথমে লগিন করুন", show_alert=True)
+        return
+
+    state["step"] = "await_live"
+    await callback.message.edit_text(
+        f"{card_header('লাইভ লিঙ্ক সেটআপ')}\n\n"
+        f"<b>লাইভ লিঙ্ক পাঠান</b>\n\n"
+        f"উদাহরণ:\n"
+        f"<code>https://t.me/channel_name</code>\n"
+        f"অথবা\n"
+        f"<code>@channel_name</code>\n\n"
+        f"{premium_line()}\n"
+        f"<i>চ্যানেল লিঙ্ক দিলেও কাজ করবে</i>",
         reply_markup=kb_back()
     )
-    await cq.answer()
+    await callback.answer("লাইভ লিঙ্ক পাঠান")
+
 
 @dp.callback_query(F.data == "admin_on")
-async def cb_admin_on(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_admin_on(callback: CallbackQuery):
+    """Enable admin mode"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     state["is_admin"] = True
-    await cq.answer("👑 অ্যাডমিন মোড চালু!", show_alert=True)
-    await cq.message.edit_text(
-        f"👑 <b>অ্যাডমিন মোড চালু হয়েছে</b>\n\n"
-        f"└ 🔊 মিউটেড মেম্বার স্বয়ংক্রিয় আনমিউট হবে",
-        reply_markup=kb_refresh()
+    await callback.answer("অ্যাডমিন মোড চালু হয়েছে", show_alert=True)
+    
+    await callback.message.edit_text(
+        f"{card_header('অ্যাডমিন মোড')}\n\n"
+        f"<b>● অ্যাডমিন মোড সফলভাবে চালু হয়েছে</b>\n\n"
+        f"এখন মিউটেড মেম্বারদের আনমিউট করা হবে\n"
+        f"স্বয়ংক্রিয় আনমিউট সিস্টেম সক্রিয়\n\n"
+        f"{premium_line()}\n"
+        f"<i>বন্ধ করতে \"অ্যাডমিন মোড বন্ধ\" চাপুন</i>",
+        reply_markup=kb_main()
     )
+
 
 @dp.callback_query(F.data == "admin_off")
-async def cb_admin_off(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_admin_off(callback: CallbackQuery):
+    """Disable admin mode"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     state["is_admin"] = False
-    await cq.answer("🚫 অ্যাডমিন মোড বন্ধ!", show_alert=True)
-    await cq.message.edit_text(
-        f"🚫 <b>অ্যাডমিন মোড বন্ধ হয়েছে</b>\n\n"
-        f"└ 👤 শুধু লাইভ-এ জয়েন করবে",
-        reply_markup=kb_refresh()
+    await callback.answer("অ্যাডমিন মোড বন্ধ হয়েছে", show_alert=True)
+    
+    await callback.message.edit_text(
+        f"{card_header('অ্যাডমিন মোড')}\n\n"
+        f"<b>○ অ্যাডমিন মোড বন্ধ করা হয়েছে</b>\n\n"
+        f"মিউটেড মেম্বার আনমিউট হবে না\n"
+        f"শুধুমাত্র লাইভে জয়েন করবে\n\n"
+        f"{premium_line()}\n"
+        f"<i>চালু করতে \"অ্যাডমিন মোড চালু\" চাপুন</i>",
+        reply_markup=kb_main()
     )
+
 
 @dp.callback_query(F.data == "run")
-async def cb_run(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
-    if not state["logged_in"]:
-        await cq.answer("❌ আগে লগিন করুন!", show_alert=True); return
-    if state["channel_entity"] is None:
-        await cq.answer("❌ আগে চ্যানেল সেট করুন!", show_alert=True); return
-    if state["running"]:
-        await cq.answer("⚠️ ইতিমধ্যে চলছে!", show_alert=True); return
+async def cb_run(callback: CallbackQuery):
+    """Start the bot"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
 
-    state["running"]     = True
-    state["unmute_count"] = 0
-    state["task"]        = asyncio.create_task(live_loop())
-    await cq.message.edit_text(
-        f"{box('BOT শুরু হয়েছে!', '🚀')}\n\n"
-        f"✅ লাইভ চালু হলে → জয়েন করবো\n"
-        f"✅ মিউটেড মেম্বার → আনমিউট করবো\n"
-        f"✅ লাইভ বন্ধ হলে → লিভ করবো\n"
-        f"✅ STOP দিলে → সব বন্ধ হবে\n\n"
-        f"<i>বট এখন সক্রিয় ⚡</i>",
-        reply_markup=kb_back()
+    if not state["logged_in"]:
+        await callback.answer("প্রথমে লগিন করুন", show_alert=True)
+        return
+
+    if not state["channel_entity"]:
+        await callback.answer("প্রথমে চ্যানেল সেট করুন", show_alert=True)
+        return
+
+    if state["running"]:
+        await callback.answer("বট ইতিমধ্যে চলছে", show_alert=True)
+        return
+
+    state["running"] = True
+    state["task"] = asyncio.create_task(bot_loop())
+    
+    await callback.message.edit_text(
+        f"{card_header('বট স্টার্ট')}\n\n"
+        f"<b>● বট সফলভাবে চালু হয়েছে</b>\n\n"
+        f"সিস্টেম স্ট্যাটাস: <b>ACTIVE</b>\n"
+        f"লাইভ খোঁজা হচ্ছে...\n"
+        f"স্বয়ংক্রিয় প্রসেস চলছে\n\n"
+        f"{gradient_line()}\n\n"
+        f"<i>স্ট্যাটাস দেখতে \"স্ট্যাটাস প্যানেল\" চাপুন</i>",
+        reply_markup=kb_quick_actions()
     )
-    await cq.answer("🚀 শুরু!")
+    await callback.answer("বট চালু হয়েছে")
+
 
 @dp.callback_query(F.data == "stop")
-async def cb_stop(cq: CallbackQuery):
-    if not is_me(cq.from_user.id): return
+async def cb_stop(callback: CallbackQuery):
+    """Stop the bot"""
+    if not is_me(callback.from_user.id):
+        await callback.answer("Unauthorized", show_alert=True)
+        return
+
     if not state["running"]:
-        await cq.answer("⚠️ ইতিমধ্যে বন্ধ আছে!", show_alert=True); return
+        await callback.answer("বট ইতিমধ্যে বন্ধ আছে", show_alert=True)
+        return
 
     state["running"] = False
+    
     if state["task"]:
         state["task"].cancel()
+        try:
+            await state["task"]
+        except asyncio.CancelledError:
+            pass
         state["task"] = None
 
-    client = state["client"]
-    total  = state.get("unmute_count", 0)
-    if state["in_live"] and state["current_call"] and client:
-        await do_leave_live(client, state["current_call"])
-        state["in_live"]      = False
-        state["current_call"] = None
-        await cq.message.edit_text(
-            f"{box('BOT বন্ধ হয়েছে', '🛑')}\n\n"
-            f"└ লাইভ থেকে লিভ করা হয়েছে ✅\n"
-            f"└ মোট আনমিউট: <b>{total}</b> জন 🔊\n\n"
-            f"<i>আবার শুরু করতে ▶️ START চাপুন</i>",
-            reply_markup=kb_main()
-        )
-    else:
-        await cq.message.edit_text(
-            f"🛑 <b>BOT বন্ধ হয়েছে</b>\n\n"
-            f"└ মোট আনমিউট: <b>{total}</b> জন 🔊\n\n"
-            f"<i>আবার শুরু করতে ▶️ START চাপুন</i>",
-            reply_markup=kb_main()
-        )
-    await cq.answer("⏹ বন্ধ!")
+    await callback.message.edit_text(
+        f"{card_header('বট স্টপ')}\n\n"
+        f"<b>○ বট সফলভাবে বন্ধ হয়েছে</b>\n\n"
+        f"সিস্টেম স্ট্যাটাস: <b>OFFLINE</b>\n"
+        f"সব প্রসেস বন্ধ করা হয়েছে\n"
+        f"ডেটা সেভ করা হয়েছে\n\n"
+        f"{gradient_line()}\n\n"
+        f"<i>পুনরায় চালু করতে \"START BOT\" চাপুন</i>",
+        reply_markup=kb_main()
+    )
+    await callback.answer("বট বন্ধ হয়েছে")
 
 
 # ══════════════════════════════════════════════
-#  ✍️ TEXT INPUT HANDLER
+#  MESSAGE HANDLERS - Input Processing
 # ══════════════════════════════════════════════
 
-@dp.message(F.text & ~F.text.startswith("/"))
-async def handle_text(msg: Message):
-    if not is_me(msg.from_user.id): return
-    step   = state.get("step")
-    client = state["client"]
+@dp.message()
+async def handle_message(message: Message):
+    """Handle user input based on current step"""
+    if not is_me(message.from_user.id):
+        return
 
-    if step == "phone":
-        phone = msg.text.strip()
+    step = state.get("step")
+    if not step:
+        return
+
+    # Phone Number Input
+    if step == "await_phone":
+        phone = message.text.strip()
+        state["phone"] = phone
+        state["step"] = None
+
+        if state["client"] is None:
+            state["client"] = TelegramClient("bot_session", API_ID, API_HASH)
+            await state["client"].connect()
+
         try:
-            result              = await client.send_code_request(phone)
-            state["phone"]      = phone
+            result = await state["client"].send_code_request(phone)
             state["phone_hash"] = result.phone_code_hash
-            state["step"]       = "code"
-            await msg.answer(
-                f"🔢 <b>ভেরিফিকেশন কোড</b>\n"
-                f"{line()}\n\n"
-                f"📱 আপনার ফোনে একটি কোড পাঠানো হয়েছে\n\n"
-                f"⬇️ <b>কোডটি এখানে পাঠান:</b>",
+            state["step"] = "await_code"
+            
+            await message.answer(
+                f"{card_header('লগিন প্রসেস')}\n\n"
+                f"<b>ধাপ ২/৩: OTP কোড</b>\n\n"
+                f"আপনার Telegram-এ কোড পাঠানো হয়েছে\n"
+                f"কোডটি এখানে পাঠান\n\n"
+                f"{premium_line()}\n"
+                f"<i>৫ ডিজিটের কোড টাইপ করুন</i>",
                 reply_markup=kb_back()
             )
         except FloodWaitError as e:
-            state["step"] = None
-            await msg.answer(
-                f"⏳ <b>অনেক চেষ্টা করা হয়েছে</b>\n\n"
-                f"└ {e.seconds} সেকেন্ড পর আবার চেষ্টা করুন",
-                reply_markup=kb_main()
-            )
-        except Exception as e:
-            state["step"] = None
-            await msg.answer(
-                f"{tag_err('এরর হয়েছে:')}\n<code>{e}</code>",
-                reply_markup=kb_main()
-            )
-
-    elif step == "code":
-        try:
-            await client.sign_in(state["phone"], msg.text.strip(), phone_code_hash=state["phone_hash"])
-            me = await client.get_me()
-            state["logged_in"] = True
-            state["step"]      = None
-            await msg.answer(
-                f"🎉 <b>লগিন সফল হয়েছে!</b>\n"
-                f"{line()}\n\n"
-                f"👤 নাম:    <b>{me.first_name}</b>\n"
-                f"📱 ইউজার: @{getattr(me, 'username', 'N/A')}\n\n"
-                f"<i>এখন 🔗 চ্যানেল সেট করুন 👇</i>",
-                reply_markup=kb_main()
-            )
-        except SessionPasswordNeededError:
-            state["step"] = "2fa"
-            await msg.answer(
-                f"🔐 <b>দুই-স্তর যাচাই (2FA)</b>\n"
-                f"{line()}\n\n"
-                f"আপনার <b>2FA পাসওয়ার্ড</b> পাঠান:",
+            await message.answer(
+                f"{tag_error('Flood Wait')}\n\n"
+                f"<b>{e.seconds} সেকেন্ড</b> অপেক্ষা করুন",
                 reply_markup=kb_back()
             )
-        except PhoneCodeInvalidError:
             state["step"] = None
-            await msg.answer(
-                f"{tag_err('ভুল কোড দেওয়া হয়েছে!')}\n\n"
-                f"<i>আবার লগিন বাটন চাপুন</i>",
-                reply_markup=kb_main()
-            )
         except Exception as e:
-            state["step"] = None
-            await msg.answer(
-                f"{tag_err('এরর:')}\n<code>{e}</code>",
-                reply_markup=kb_main()
+            await message.answer(
+                f"{tag_error('ত্রুটি')}\n\n{str(e)}",
+                reply_markup=kb_back()
             )
+            state["step"] = None
 
-    elif step == "2fa":
+    # OTP Code Input
+    elif step == "await_code":
+        code = message.text.strip()
+        state["step"] = None
+
         try:
-            await client.sign_in(password=msg.text.strip())
-            me = await client.get_me()
+            await state["client"].sign_in(state["phone"], code, phone_code_hash=state["phone_hash"])
             state["logged_in"] = True
-            state["step"]      = None
-            await msg.answer(
-                f"🎉 <b>লগিন সফল হয়েছে!</b>\n"
-                f"{line()}\n\n"
-                f"👤 নাম:    <b>{me.first_name}</b>\n"
-                f"📱 ইউজার: @{getattr(me, 'username', 'N/A')}\n\n"
-                f"<i>এখন 🔗 চ্যানেল সেট করুন 👇</i>",
+            
+            await message.answer(
+                f"{card_header('লগিন সফল')}\n\n"
+                f"<b>● আপনি সফলভাবে লগিন করেছেন</b>\n\n"
+                f"অথেন্টিকেশন সম্পন্ন\n"
+                f"সেশন সেভ করা হয়েছে\n"
+                f"সিস্টেম রেডি\n\n"
+                f"{gradient_line()}\n\n"
+                f"<b>পরবর্তী ধাপ:</b>\n"
+                f"চ্যানেল সেটআপ করুন\n"
+                f"লাইভ লিঙ্ক সেট করুন",
                 reply_markup=kb_main()
             )
+            
+        except SessionPasswordNeededError:
+            state["step"] = "await_2fa"
+            await message.answer(
+                f"{card_header('২-ফ্যাক্টর অথেন্টিকেশন')}\n\n"
+                f"<b>ধাপ ৩/৩: পাসওয়ার্ড</b>\n\n"
+                f"আপনার ২FA পাসওয়ার্ড পাঠান\n\n"
+                f"{premium_line()}\n"
+                f"<i>Cloud Password লিখুন</i>",
+                reply_markup=kb_back()
+            )
+            
+        except PhoneCodeInvalidError:
+            await message.answer(
+                f"{tag_error('ভুল কোড')}\n\n"
+                f"OTP কোড সঠিক নয়\n"
+                f"পুনরায় চেষ্টা করুন",
+                reply_markup=kb_back()
+            )
+            
+        except Exception as e:
+            await message.answer(
+                f"{tag_error('ত্রুটি')}\n\n{str(e)}",
+                reply_markup=kb_back()
+            )
+
+    # 2FA Password Input
+    elif step == "await_2fa":
+        password = message.text.strip()
+        state["step"] = None
+
+        try:
+            await state["client"].sign_in(password=password)
+            state["logged_in"] = True
+            
+            await message.answer(
+                f"{card_header('লগিন সফল')}\n\n"
+                f"<b>● আপনি সফলভাবে লগিন করেছেন</b>\n\n"
+                f"২FA যাচাই সম্পন্ন\n"
+                f"সেশন সেভ করা হয়েছে\n"
+                f"সিস্টেম রেডি\n\n"
+                f"{gradient_line()}\n\n"
+                f"<b>পরবর্তী ধাপ:</b>\n"
+                f"চ্যানেল সেটআপ করুন\n"
+                f"লাইভ লিঙ্ক সেট করুন",
+                reply_markup=kb_main()
+            )
+            
         except PasswordHashInvalidError:
-            state["step"] = None
-            await msg.answer(
-                f"{tag_err('ভুল 2FA পাসওয়ার্ড!')}\n\n"
-                f"<i>আবার লগিন বাটন চাপুন</i>",
-                reply_markup=kb_main()
+            await message.answer(
+                f"{tag_error('ভুল পাসওয়ার্ড')}\n\n"
+                f"পাসওয়ার্ড সঠিক নয়\n"
+                f"পুনরায় চেষ্টা করুন",
+                reply_markup=kb_back()
             )
+            
         except Exception as e:
-            state["step"] = None
-            await msg.answer(
-                f"{tag_err('এরর:')}\n<code>{e}</code>",
-                reply_markup=kb_main()
+            await message.answer(
+                f"{tag_error('ত্রুটি')}\n\n{str(e)}",
+                reply_markup=kb_back()
             )
 
-    elif step == "channel":
-        link = msg.text.strip()
+    # Channel Link Input
+    elif step == "await_channel":
+        link = message.text.strip()
+        state["step"] = None
+
         try:
-            try: await client(JoinChannelRequest(link))
-            except Exception: pass
-            entity = await client.get_entity(link)
+            entity = await state["client"].get_entity(link)
+            await state["client"](JoinChannelRequest(entity))
+            
             state["channel_entity"] = entity
-            state["channel_link"]   = link
-            state["step"]           = None
-            title = getattr(entity, 'title', link)
-            await msg.answer(
-                f"✅ <b>চ্যানেল সেট হয়েছে!</b>\n"
-                f"{line()}\n\n"
-                f"📢 চ্যানেল: <b>{title}</b>\n\n"
-                f"<i>এখন 📡 লাইভ লিঙ্ক সেট করুন 👇</i>",
+            state["channel_link"] = link
+            
+            await message.answer(
+                f"{card_header('চ্যানেল সেটআপ সফল')}\n\n"
+                f"<b>● চ্যানেল সফলভাবে সেট করা হয়েছে</b>\n\n"
+                f"চ্যানেল: <code>{link}</code>\n"
+                f"সংযুক্ত হয়েছে\n"
+                f"সেভ করা হয়েছে\n\n"
+                f"{gradient_line()}\n\n"
+                f"<b>পরবর্তী ধাপ:</b>\n"
+                f"লাইভ লিঙ্ক সেট করুন",
                 reply_markup=kb_main()
             )
+            
         except Exception as e:
-            state["step"] = None
-            await msg.answer(
-                f"{tag_err('এরর:')}\n<code>{e}</code>",
-                reply_markup=kb_main()
+            await message.answer(
+                f"{tag_error('ত্রুটি')}\n\n"
+                f"চ্যানেল খুঁজে পাওয়া যায়নি\n"
+                f"সঠিক লিঙ্ক দিন\n\n"
+                f"<code>{str(e)}</code>",
+                reply_markup=kb_back()
             )
 
-    elif step == "live":
-        link = msg.text.strip()
-        try:
-            try: await client(JoinChannelRequest(link))
-            except Exception: pass
-            entity = await client.get_entity(link)
-            state["channel_entity"] = entity
-            state["live_link"]      = link
-            state["step"]           = None
-            title = getattr(entity, 'title', link)
-            await msg.answer(
-                f"✅ <b>লাইভ লিঙ্ক সেট হয়েছে!</b>\n"
-                f"{line()}\n\n"
-                f"📡 লাইভ: <b>{title}</b>\n\n"
-                f"<i>এখন 🟢 START BOT চাপুন 👇</i>",
-                reply_markup=kb_main()
-            )
-        except Exception:
-            state["live_link"] = link
-            state["step"]      = None
-            await msg.answer(
-                f"✅ <b>লাইভ লিঙ্ক সেট হয়েছে!</b>\n"
-                f"{line()}\n\n"
-                f"📡 লিঙ্ক: <code>{link}</code>\n"
-                f"<i>(চ্যানেল entity ব্যবহার করা হবে)</i>\n\n"
-                f"<i>এখন 🟢 START BOT চাপুন 👇</i>",
-                reply_markup=kb_main()
-            )
+    # Live Link Input
+    elif step == "await_live":
+        link = message.text.strip()
+        state["step"] = None
+        state["live_link"] = link
+        
+        await message.answer(
+            f"{card_header('লাইভ লিঙ্ক সেটআপ সফল')}\n\n"
+            f"<b>● লাইভ লিঙ্ক সফলভাবে সেট করা হয়েছে</b>\n\n"
+            f"লিঙ্ক: <code>{link}</code>\n"
+            f"সেভ করা হয়েছে\n\n"
+            f"{gradient_line()}\n\n"
+            f"<b>সব সেটআপ সম্পন্ন</b>\n"
+            f"এখন \"START BOT\" চাপুন",
+            reply_markup=kb_main()
+        )
 
 
 # ══════════════════════════════════════════════
-#  🚀 MAIN
+#  MAIN ENTRY POINT
 # ══════════════════════════════════════════════
 
 async def main():
-    if not BOT_TOKEN or API_ID == 0 or not API_HASH:
-        print("❗ BOT_TOKEN, API_ID, API_HASH সেট করুন!")
-        return
-    print(f"🤖 Live Auto-Unmute Bot {VERSION} শুরু হচ্ছে...")
-    await dp.start_polling(bot)
+    """Start the bot with premium experience"""
+    logging.info("Starting Premium Live Auto-Unmute Bot...")
+    logging.info(f"Version: {VERSION}")
+    
+    try:
+        await dp.start_polling(bot)
+    finally:
+        if state["client"]:
+            await state["client"].disconnect()
+        await bot.session.close()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Bot stopped by user")
+    except Exception as e:
+        logging.error(f"Fatal error: {e}")
