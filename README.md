@@ -27,6 +27,11 @@
 
 ## 🚀 Railway-তে Deploy করুন
 
+এই সংস্করণে `Dockerfile` ব্যবহার করা হয়েছে। এতে Railway/Nixpacks-এর
+`externally-managed-environment` pip error এড়ানো হবে। GitHub repository-তে
+প্রজেক্টের ভেতরের ফাইলগুলো (Dockerfile সহ) root directory-তে রাখুন।
+
+
 ### ধাপ ১ — Account তৈরি
 👉 [railway.app](https://railway.app) এ GitHub দিয়ে Sign Up করুন
 
