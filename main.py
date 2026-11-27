@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # ================================================================
 #   Telegram Live Auto-Unmute BOT
-#   Premium Edition v3.0
-#   ─────────────────────────────────��───────
+#   Premium Edition v3.1 - Fixed & Stable
+#   ─────────────────────────────────
 #   লাইভ চালু → অটো জয়েন
 #   মিউটেড মেম্বার → অটো আনমিউট
 #   লাইভ বন্ধ → অটো লিভ
@@ -36,7 +36,7 @@ API_HASH     = os.getenv("API_HASH",   "")
 ADMIN_ID     = int(os.getenv("ADMIN_ID", "0"))
 UNMUTE_DELAY = 3
 RECHECK_WAIT = 10
-VERSION      = "3.0 Premium"
+VERSION      = "3.1 Premium Fixed"
 # ──────────────────────────────────────────────
 
 logging.basicConfig(level=logging.INFO)
@@ -346,7 +346,7 @@ HELP_TEXT = f"""
   └ লগিন সম্পন্ন
 
 <b>পর্ব ২ › চ্যানেল সেটআপ</b>
-  ├ "চ্যানেল সেটআপ" চাপুন
+  ├ "চ্যানেল সেটআপ" বাটন চাপুন
   ├ আপনার চ্যানেল লিঙ্ক পাঠান
   └ চ্যানেল সেভ হয়েছে
 
@@ -356,7 +356,7 @@ HELP_TEXT = f"""
   └ লিঙ্ক সেভ হয়েছে
 
 <b>পর্ব ৪ › START BOT</b>
-  ├ "START BOT" চাপুন
+  ├ "START BOT" বাটন চাপুন
   └ বট চালু হয়ে গেছে
 
 {premium_line()}
@@ -379,6 +379,10 @@ HELP_TEXT = f"""
 ▪ প্রিমিয়াম অ্যানিমেশন
 
 <i>উপভোগ করুন প্রিমিয়াম অভিজ্ঞতা</i>
+
+⚠ <b>গুরুত্বপূর্ণ:</b> চ্যানেল মালিক যদি কাউকে মিউট করে দেন, 
+তাহলে বট সেই ব্যক্তিকে আনমিউট করতে পারবে না। শুধুমাত্র 
+ভয়েস চ্যাট অ্যাডমিন অথবা যে মিউট করেছেন শুধু وہ unmute করতে পারবেন।
 """
 
 
@@ -487,9 +491,14 @@ async def resolve_peer(client, peer, users_map):
 
 
 async def unmute_new_members(client, call, done_set: set):
-    """Unmute muted participants with smooth processing"""
+    """Unmute muted participants with smooth processing
+    
+    ⚠ WARNING: If channel owner mutes someone, bot cannot unmute them.
+    Only voice chat admin who muted OR channel owner can unmute.
+    """
     offset = ""
     count  = 0
+    failed_count = 0
     
     while True:
         try:
@@ -540,6 +549,11 @@ async def unmute_new_members(client, call, done_set: set):
                     wait_time = int(''.join(filter(str.isdigit, str(e))) or "10")
                     logging.warning(f"Flood wait: {wait_time}s")
                     await asyncio.sleep(wait_time + 2)
+                elif "admin" in err_str or "permission" in err_str:
+                    # Cannot unmute - owner muted or no permission
+                    failed_count += 1
+                    done_set.add(src)
+                    logging.warning(f"Cannot unmute {src}: {err_str}")
                 else:
                     logging.debug(f"Unmute error: {e}")
 
@@ -547,6 +561,9 @@ async def unmute_new_members(client, call, done_set: set):
         if not offset:
             break
 
+    if failed_count > 0:
+        logging.info(f"Skipped {failed_count} participants (owner muted or no permission)")
+        
     return count
 
 
@@ -592,7 +609,7 @@ async def bot_loop():
                             ADMIN_ID,
                             f"<b>● লাইভে জয়েন সফল</b>\n\n"
                             f"বট এখন লাইভে আছে\n"
-                            f"আনমিউট প্রসেস চলছে..."
+                            f"স্বয়ংক্রিয় আনমিউট প্রসেস চলছে..."
                         )
                     except:
                         pass
